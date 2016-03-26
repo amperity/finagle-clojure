@@ -23,5 +23,5 @@
   ;; this is akin to Finagle itself, where depending on finagle-thrift
   ;; pulls in finagle-core as well.
   :dependencies [[finagle-clojure/core "0.5.1-SNAPSHOT"]
-                 [com.twitter/finagle-thrift_2.11 "6.33.0"]
-                 [org.apache.thrift/libthrift "0.5.0-1"]])
+                 [com.twitter/finagle-thrift_2.10 "6.33.0"]
+                 [org.apache.thrift/libthrift "0.9.1"]])
