@@ -1,15 +1,34 @@
 (ns leiningen.finagle-clojure
   (:require [leiningen.javac]
             [robert.hooke]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [leiningen.core.classpath :as classpath]
+            [cemerick.pomegranate :as pom])
+  (:import (java.io File)
+           (java.net URL)))
 
-(defn- thrift-files
+(defn- find-thrift-files
   [project-root source-path]
   (->> source-path
     (io/file project-root)
     (file-seq)
     (filter #(and (.isFile %) (.endsWith (.getName %) ".thrift")))
     (map #(.getPath %))))
+
+(defn- scrape-includes
+  "Returns the filenames of thrift files this code tries to include."
+  [thrift-code]
+  (map second (re-seq #"include \"(.+\.thrift)\"" thrift-code)))
+
+(defn- copy-file-to-target-temp-dir
+  "Copies a thrift file we depend on into target/thrift-include"
+  [project-root ^URL thrift-url filename]
+  (let [target-dir (File. project-root "target/thrift-include")
+        target-file (File. target-dir filename)]
+    (.mkdirs target-dir)
+    (leiningen.core.main/info
+     "Copying" (.getPath thrift-url) "to" (.getPath target-file))
+    (spit target-file (slurp thrift-url))))
 
 (defn scrooge
   "Compile Thrift definitions into Java classes using Scrooge.
@@ -33,6 +52,8 @@
     lein finagle-clojure scrooge :lint --help # shows available options for the linter
     lein finagle-clojure scrooge :lint -w # show linter warnings as well (warnings won't prevent compilation)"
   [project & options]
+  (doseq [f (classpath/get-classpath project)]
+    (pom/add-classpath f))
   (let [subtask (first options)
         project-root (:root project)
         source-path (get-in project [:finagle-clojure :thrift-source-path])
@@ -40,8 +61,20 @@
     (if-not (and source-path raw-dest-path)
       (leiningen.core.main/info "No config found for lein-finagle-clojure, not compiling Thrift for" (:name project))
       (let [absolute-dest-path (->> raw-dest-path (io/file project-root) (.getAbsolutePath))
-            thrift-files (thrift-files project-root source-path)
-            scrooge-args (concat ["--finagle" "--skip-unchanged" "--language" "java" "--dest" absolute-dest-path] thrift-files)]
+            thrift-files (find-thrift-files project-root source-path)
+            include-filenames (->> thrift-files
+                                   (mapcat #(scrape-includes (slurp %)))
+                                   ;; Verify dependency file isn't already in the thrift source path
+                                   (filter #(every? (fn [^String thrift-file]
+                                                      (not (.endsWith thrift-file %)))
+                                                    thrift-files)))
+            _ (doseq [filename include-filenames
+                      :let [resource (io/resource filename)]]
+                (copy-file-to-target-temp-dir project-root resource filename))
+            include-dir (.getPath (File. project-root "target/thrift-include/"))
+            scrooge-args (concat ["--finagle" "--skip-unchanged" "--language" "java" "--dest" absolute-dest-path]
+                                 ["-i" include-dir]
+                                 thrift-files)]
         (when (= subtask ":lint")
           (let [default-args ["--disable-rule" "Namespaces"]
                 additional-args (rest options)
