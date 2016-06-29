@@ -20,10 +20,13 @@
   [thrift-code]
   (map second (re-seq #"include \"(.+\.thrift)\"" thrift-code)))
 
+(def ^:private target-temp-dir
+  "target/thrift-include")
+
 (defn- copy-file-to-target-temp-dir
   "Copies a thrift file we depend on into target/thrift-include"
   [project-root ^URL thrift-url filename]
-  (let [target-dir (File. project-root "target/thrift-include")
+  (let [target-dir (File. project-root target-temp-dir)
         target-file (File. target-dir filename)]
     (.mkdirs target-dir)
     (leiningen.core.main/info
@@ -71,7 +74,7 @@
             _ (doseq [filename include-filenames
                       :let [resource (io/resource filename)]]
                 (copy-file-to-target-temp-dir project-root resource filename))
-            include-dir (.getPath (File. project-root "target/thrift-include/"))
+            include-dir (.getPath (File. project-root target-temp-dir))
             scrooge-args (concat ["--finagle" "--skip-unchanged" "--language" "java" "--dest" absolute-dest-path]
                                  ["-i" include-dir]
                                  thrift-files)]
