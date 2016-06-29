@@ -4,7 +4,9 @@
             [clojure.java.io :as io]
             [leiningen.core.classpath :as classpath]
             [leiningen.core.main :as lein]
-            [cemerick.pomegranate :as pom])
+            [cemerick.pomegranate :as pom]
+            [clojure.set :as set]
+            [clojure.string :as str])
   (:import (java.io File)
            (java.net URL)))
 
@@ -21,15 +23,14 @@
   [thrift-code]
   (map second (re-seq #"include \"(.+\.thrift)\"" thrift-code)))
 
-(def ^:private target-temp-dir
-  "target/thrift-include")
+(defn- target-temp-dir
+  [project]
+  (io/file (:target-path project) "thrift-include"))
 
 (defn- copy-file-to-target-temp-dir
   "Copies a thrift file we depend on into target/thrift-include"
-  [project-root ^URL thrift-url filename]
-  (let [target-dir (File. project-root target-temp-dir)
-        target-file (File. target-dir filename)]
-    (.mkdirs target-dir)
+  [project-root ^URL thrift-url filename ^File target-dir]
+  (let [target-file (io/file target-dir filename)]
     (lein/info
      "Copying" (.getPath thrift-url) "to" (.getPath target-file))
     (spit target-file (slurp thrift-url))))
@@ -66,21 +67,22 @@
       (lein/info "No config found for lein-finagle-clojure, not compiling Thrift for" (:name project))
       (let [absolute-dest-path (->> raw-dest-path (io/file project-root) (.getAbsolutePath))
             thrift-files (find-thrift-files project-root source-path)
-            include-filenames (->> thrift-files
-                                   (mapcat #(scrape-includes (slurp %)))
-                                   ;; Verify dependency file isn't already in the thrift source path
-                                   (filter #(every? (fn [^String thrift-file]
-                                                      (not (.endsWith thrift-file %)))
-                                                    thrift-files)))
-            _ (doseq [filename include-filenames
-                      :let [resource (io/resource filename)]]
-                (if-not resource
-                  (lein/abort (str "Aborting, could not find thrift source file: " filename))
-                  (copy-file-to-target-temp-dir project-root resource filename)))
-            include-dir (.getPath (File. project-root target-temp-dir))
+            include-filenames (set/difference (->> thrift-files
+                                                   (mapcat (comp scrape-includes slurp))
+                                                   set)
+                                              (->> thrift-files
+                                                   (map #(last (str/split % #"/")))
+                                                   set))
+            ^File temp-dir (target-temp-dir project)
             scrooge-args (concat ["--finagle" "--skip-unchanged" "--language" "java" "--dest" absolute-dest-path]
-                                 ["-i" include-dir]
+                                 ["-i" (.getPath temp-dir)]
                                  thrift-files)]
+        (.mkdirs temp-dir)
+        (doseq [filename include-filenames
+                :let [resource (io/resource filename)]]
+          (if-not resource
+            (lein/abort (str "Aborting, could not find thrift source file: " filename))
+            (copy-file-to-target-temp-dir project-root resource filename temp-dir)))
         (when (= subtask ":lint")
           (let [default-args ["--disable-rule" "Namespaces"]
                 additional-args (rest options)
