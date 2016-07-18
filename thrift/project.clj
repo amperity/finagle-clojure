@@ -1,27 +1,40 @@
-(defproject finagle-clojure/thrift "0.5.1-SNAPSHOT"
+(defproject finagle-clojure/thrift "0.5.2-AMP"
   :description "A light wrapper around finagle-thrift for Clojure"
   :url "https://github.com/twitter/finagle-clojure"
+  :scm {:name "git" :url "https://github.com/finagle/finagle-clojure"}
   :license {:name "Apache License, Version 2.0"
             :url "https://www.apache.org/licenses/LICENSE-2.0"}
-  :scm {:name "git" :url "https://github.com/finagle/finagle-clojure"}
-  :plugins [[lein-midje "3.1.3"]
-            [lein-finagle-clojure "0.5.1-SNAPSHOT" :hooks false]]
-  :profiles {:test {:dependencies [[midje "1.7.0" :exclusions [org.clojure/clojure]]]}
-             :dev [:test {:dependencies [[org.clojure/clojure "1.8.0"]]}]
-             :1.7 [:test {:dependencies [[org.clojure/clojure "1.7.0"]]}]
-             :1.6 [:test {:dependencies [[org.clojure/clojure "1.6.0"]]}]
-             :1.5 [:test {:dependencies [[org.clojure/clojure "1.5.1"]]}]
-             :1.4 [:test {:dependencies [[org.clojure/clojure "1.4.0"]]}]}
-  :finagle-clojure {:thrift-source-path "test/resources" :thrift-output-path "test/java"}
+
+  :pedantic? :abort
+
+  :repositories
+  [["twitter" "https://maven.twttr.com/"]]
+
+  :plugins
+  [[lein-midje "3.1.3"]
+   [lein-finagle-clojure "0.5.2-AMP" :hooks false]]
+
+  :dependencies
+  [[finagle-clojure/core "0.5.2-AMP"]
+   [com.twitter/finagle-thrift_2.10 "6.35.0"]
+   [org.apache.thrift/libthrift "0.9.1"]
+
+   ; Version overrides
+   [org.apache.httpcomponents/httpclient "4.3.4"]
+   [org.apache.httpcomponents/httpcore "4.3.2"]]
+
   :java-source-paths ["test/java"]
-  :jar-exclusions [#"test"]
   :test-paths ["test/clj/"]
-  ;; TODO there's no checksum for libthrift-0.5.0.pom, set checksum to warn for now
-  :repositories [["twitter" {:url "https://maven.twttr.com/" :checksum :warn}]]
-  ;; the dependency on finagle-clojure/core is required for tests
-  ;; but also to require fewer dependencies in projects that use thrift.
-  ;; this is akin to Finagle itself, where depending on finagle-thrift
-  ;; pulls in finagle-core as well.
-  :dependencies [[finagle-clojure/core "0.5.1-SNAPSHOT"]
-                 [com.twitter/finagle-thrift_2.10 "6.33.0"]
-                 [org.apache.thrift/libthrift "0.9.1"]])
+  :jar-exclusions [#"test"]
+
+  :finagle-clojure
+  {:thrift-source-path "test/resources"
+   :thrift-output-path "test/java"}
+
+  :profiles
+  {:test {:dependencies [[midje "1.7.0" :exclusions [org.clojure/clojure]]]}
+   :dev [:test {:dependencies [[org.clojure/clojure "1.8.0"]]}]
+   :1.7 [:test {:dependencies [[org.clojure/clojure "1.7.0"]]}]
+   :1.6 [:test {:dependencies [[org.clojure/clojure "1.6.0"]]}]
+   :1.5 [:test {:dependencies [[org.clojure/clojure "1.5.1"]]}]
+   :1.4 [:test {:dependencies [[org.clojure/clojure "1.4.0"]]}]})
