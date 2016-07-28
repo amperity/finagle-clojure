@@ -65,14 +65,28 @@
 (defn- external-includes
   "Returns the paths of included thrift files which are not in the collection
   of source thrift file paths given."
-  [root source-paths]
+  [root source-paths thrift-dependencies]
   (let [include-paths (->> source-paths
                            (mapcat (comp scrape-includes slurp))
                            (set))
         relative-sources (->> source-paths
                               (map #(subs % (inc (count (str root)))))
-                              (set))]
-    (set/difference include-paths relative-sources)))
+                              (set))
+        external-deps (set/difference include-paths relative-sources)]
+    ;; For each of those external dependencies, recursively scrape
+    ;; THEM to find any transitive dependencies. Breadth-first search.
+    (loop [q (into clojure.lang.PersistentQueue/EMPTY external-deps)
+           result []]
+      (if (empty? q)
+        result
+        (let [filename (peek q)
+              {:keys [content]} (thrift-dependencies filename)]
+          (recur (into (pop q)
+                       (when content
+                         ;; If content is nil, we have a problem, but
+                         ;; the scrooge task will abort accordingly
+                         (scrape-includes content)))
+                 (conj result filename)))))))
 
 
 (defn- target-include-dir
@@ -114,7 +128,7 @@
             absolute-dest-path (.getAbsolutePath (io/file project-root raw-dest-path))
             thrift-sources (find-thrift-files absolute-source-path)
             thrift-deps (find-thrift-dependencies project)
-            include-paths (external-includes absolute-source-path thrift-sources)
+            include-paths (external-includes absolute-source-path thrift-sources thrift-deps)
             include-dir (target-include-dir project)
             source-names (map #(last (str/split % #"/")) thrift-sources)
             scrooge-args (concat ["--finagle" "--skip-unchanged" "--language" "java" "--dest" absolute-dest-path]
