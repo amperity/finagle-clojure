@@ -1,4 +1,4 @@
-(defproject lein-finagle-clojure "0.5.2-AMP"
+(defproject lein-finagle-clojure "0.5.3-AMP"
   :description "A lein plugin for working with finagle-clojure"
   :url "https://github.com/twitter/finagle-clojure"
   :scm {:name "git" :url "https://github.com/finagle/finagle-clojure"}
