@@ -76,7 +76,7 @@
     ;; For each of those external dependencies, recursively scrape
     ;; THEM to find any transitive dependencies. Breadth-first search.
     (loop [q (into clojure.lang.PersistentQueue/EMPTY external-deps)
-           result []]
+           result #{}]
       (if (empty? q)
         result
         (let [filename (peek q)
@@ -85,7 +85,8 @@
                        (when content
                          ;; If content is nil, we have a problem, but
                          ;; the scrooge task will abort accordingly
-                         (scrape-includes content)))
+                         (remove result
+                                 (scrape-includes content))))
                  (conj result filename)))))))
 
 
