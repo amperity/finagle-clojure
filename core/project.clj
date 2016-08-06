@@ -1,4 +1,4 @@
-(defproject finagle-clojure/core "0.5.2-AMP"
+(defproject finagle-clojure/core "0.5.3-AMP"
   :description "A light wrapper around Finagle & Twitter Util for Clojure"
   :url "https://github.com/twitter/finagle-clojure"
   :scm {:name "git" :url "http://github.com/finagle/finagle-clojure"}
@@ -18,11 +18,13 @@
    [com.google.guava/guava "19.0"]
    [commons-codec "1.10"
     :exclusions [com.sun.jmx/jmxri com.sun.jdmk/jmxtools javax.jms/jms]]
-   [org.clojure/tools.macro "0.1.5"]]
+   [org.clojure/tools.macro "0.1.5"]
+   [org.apache.httpcomponents/httpcore "4.4.5"]
+   [org.apache.httpcomponents/httpclient "4.5.2"]]
 
   :profiles
   {:test {:dependencies [[midje "1.7.0" :exclusions [org.clojure/clojure]]
-                         [criterium "0.4.3"]]}
+                         [criterium "0.4.4"]]}
    :dev [:test {:dependencies [[org.clojure/clojure "1.8.0"]]}]
    :1.7 [:test {:dependencies [[org.clojure/clojure "1.7.0"]]}]
    :1.6 [:test {:dependencies [[org.clojure/clojure "1.6.0"]]}]

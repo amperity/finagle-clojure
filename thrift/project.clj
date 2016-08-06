@@ -1,4 +1,4 @@
-(defproject finagle-clojure/thrift "0.5.2-AMP"
+(defproject finagle-clojure/thrift "0.5.3-AMP"
   :description "A light wrapper around finagle-thrift for Clojure"
   :url "https://github.com/twitter/finagle-clojure"
   :scm {:name "git" :url "https://github.com/finagle/finagle-clojure"}
@@ -12,16 +12,16 @@
 
   :plugins
   [[lein-midje "3.1.3"]
-   [lein-finagle-clojure "0.5.2-AMP" :hooks false]]
+   [lein-finagle-clojure "0.5.3-AMP" :hooks false]]
 
   :dependencies
-  [[finagle-clojure/core "0.5.2-AMP"]
+  [[finagle-clojure/core "0.5.3-AMP"]
    [com.twitter/finagle-thrift_2.10 "6.35.0"]
    [org.apache.thrift/libthrift "0.9.1"]
 
    ; Version overrides
-   [org.apache.httpcomponents/httpclient "4.3.4"]
-   [org.apache.httpcomponents/httpcore "4.3.2"]]
+   [org.apache.httpcomponents/httpcore "4.4.5"]
+   [org.apache.httpcomponents/httpclient "4.5.2"]]
 
   :java-source-paths ["test/java"]
   :test-paths ["test/clj/"]
