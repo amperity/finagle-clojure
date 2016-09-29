@@ -1,4 +1,4 @@
-(defproject finagle-clojure/thrift "0.5.3-AMP"
+(defproject finagle-clojure/thrift "0.5.4-AMP"
   :description "A light wrapper around finagle-thrift for Clojure"
   :url "https://github.com/twitter/finagle-clojure"
   :scm {:name "git" :url "https://github.com/finagle/finagle-clojure"}
